@@ -1,0 +1,1 @@
+Repository to program different ML models from scratch to gain a deeper undertsanding of their implementation
