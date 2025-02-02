@@ -33,8 +33,13 @@ class DecisionTreeRegressor:
         Returns:
             tuple: (feature, threshold)
         """
+
         # All features
         features = self.X.columns
+        n_samples = self.X.shape[0]
+
+        # Current best splits and thresholds
+        best_feature, best_threshold, best_mse = None, None, float("inf")
 
         # Iterate through each feature and potential threshold
         for f in features:
@@ -49,4 +54,15 @@ class DecisionTreeRegressor:
                 if sum(left_mask) == 0 or sum(right_mask) == 0:
                     continue
 
-                # Calculate the mean squared error on either side of the split
+                # Calculate the MSE on either side of the split
+                # The lower the variance the higher the homogeneity 
+                left_mse = self.mean_squared_error(self.y[left_mask])
+                right_mse = self.mean_squared_error(self.y[right_mask])
+                # Weighted mse dependent on split sizes
+                total_mse = ((sum(left_mask)*left_mse) + (sum(right_mask)*right_mse))/n_samples
+
+                # Check if this MSE outperforms current
+                if total_mse < best_mse:
+                    best_feature, best_threshold, best_mse = f, threshold, total_mse
+        
+        return((best_feature, best_threshold))
