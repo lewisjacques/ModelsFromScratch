@@ -1,17 +1,22 @@
-from split_functions import best_split_numerical
+from functions import function_dict
 import pandas as pd
 import numpy as np
 
-class DecisionTree:
+class DecisionTreeModel:
+    IMPORT_TYPES = ("cost", "split")
+
+
+
     #! Wrap the split and cost functions in decorators to improve
     SPLIT_FUNCTIONS = ("best_split_numerical",)
     COST_FUNCTIONS = ("mse")
 
     def __init__(
         self,
-        split_function="best_split_numerical",
-        cost_function="mse",
-        type="regression"
+        split_function:str="best_split_numerical",
+        cost_function:str="mean_squared_error",
+        model_type:str="regression",
+        threshold:str|None=None
     ):
         """
         Class for a Decision Tree Regressor
@@ -20,32 +25,60 @@ class DecisionTree:
         two stopping conditions are met
             - One node has too few samples
             - The max depth has been reached
+
+        Args:
+            split_function (str, optional): function to determine how we split nodes.
+                Defaults to "best_split_numerical".
+            cost_function (str, optional): function to minimise at each split. 
+                Defaults to "mse".
+            model_type (str, optional): classifier|regression. 
+                Defaults to "regression".
+            threshold (str | None, optional): Required if model_type is classifier.
+                Defaults to None.
         """
 
-        assert type in ("regression",) #! "classifier") Not yet implemented
+        # Check requested model type
+        assert model_type in ("regression","classifier")
+        # If model type is classifier, threshold must be set
+        if model_type == "classifier":
+            assert threshold is not None, \
+                "If model-type is classification, threshold for a true assignment must be provided"
+            self.threshold = threshold
+        assert split_function in function_dict["split_functions"].keys(), \
+            "Split function not yet implemented"
+        assert cost_function in function_dict["cost_functions"].keys()
 
-        # Set stopping conditions
+        # Set stopping conditions and initialise tree
         self.min_samples = 5
         self.max_depth = 10
-
-        # Set function choices
-        assert split_function in self.SPLIT_FUNCTIONS, \
-            'Please select a relevant split function'
-        self.split_function = split_function
-        assert cost_function in self.COST_FUNCTIONS, \
-            'Please select a relevant cost function'
-        self.cost_function = cost_function
-
         self.tree = None
+        self.model_type = model_type
 
-    def build_tree(self, X:pd.DataFrame, y:pd.Series, depth=1):
+    def build_tree(self, X:pd.DataFrame, y:pd.Series, depth=1) -> dict:
+        """
+        Build the decision tree based on class parameters
+
+        Args:
+            X (pd.DataFrame): Features
+            y (pd.Series): Target variable
+            depth (int, optional): Current tree depth. Defaults to 1.
+
+        Returns:
+            dict: Tree in the form of a dictionary
+        """
         # Check depth stopping condition
         if depth > self.max_depth or len(y) < self.min_samples:
-            # Return the average value of the y-vals at the leaf node
-            return(np.mean(y))
+            if self.model_type == "regression":
+                # Return the average value of the y-vals at the leaf node
+                return(np.mean(y))
+            elif self.model_type == "classifier":
+                return(np.mean(y) > self.threshold)
+            else:
+                # Shouldn't be here
+                return(None)
 
         # Get split under current parameters
-        top_feature, thresh = best_split_numerical(X,y)
+        top_feature, thresh = function_dict["split_functions"]["best_split_numerical"](X,y)
 
         # Set masks
         new_left_mask = X[:, top_feature] <= thresh
@@ -61,23 +94,46 @@ class DecisionTree:
             "right": self.build_tree(new_right_x, new_right_y, depth+1)
         })
     
+    def predict_one(self, X:pd.DataFrame) -> float:
+        """
+        Navigate the class tree to return a single prediction
+        based on the features provided
 
+        Args:
+            X (pd.DataFrame): All features for a single row
 
+        Returns:
+            float: Target variable, y
+        """
 
+        assert self.tree is not None, "Build tree before predicting variables"
+        # Set current_node to be the core tree
+        current_node = self.tree
 
+        # Essentially checking if we're at a leaf node
+        while isinstance(current_node, dict):
+            node_feature = self.tree["feature"]
+            node_thresh = self.tree["threshold"]
+            
+            # Select the value from the features based on the current node
+            node_feature_val = X[:,node_feature]
+            if node_feature_val <= node_thresh:
+                current_node = current_node["left"]
+            else:
+                current_node = current_node["right"]
 
+        # Return the leaf node which should now be a float
+        return(current_node)
 
+    def predict(self, X:pd.DataFrame) -> np.array:
+        """
+        Make predictions for all samples
 
-# def predict_one(self, x, tree):
-#     """Make a single prediction by traversing the tree."""
-#     if not isinstance(tree, dict):
-#         return tree  # Return the value if it's a leaf node
+        Args:
+            X (pd.DataFrame): All rows for all features
 
-#     if x[tree['feature']] <= tree['threshold']:
-#         return self.predict_one(x, tree['left'])
-#     else:
-#         return self.predict_one(x, tree['right'])
-
-# def predict(self, X):
-#     """Make predictions for all samples."""
-#     return np.array([self.predict_one(x, self.tree) for x in X])
+        Returns:
+            np.array: Array of y, target variables
+        """
+        
+        return np.array([self.predict_one(x, self.tree) for x in X])

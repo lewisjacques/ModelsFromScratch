@@ -1,9 +1,16 @@
-from cost_functions import mean_squared_error
+from ._model_helper import SplitFunctionHelper
+from .cost_functions import mean_squared_error
 import pandas as pd
+
+### --- Initialise SplitFunctionHelper --- ###
+
+# This class will store all split_functions implemented
+_fh = SplitFunctionHelper()
 
 ### --- Split Functions --- ###
 
-def best_split_numerical(self, X:pd.DataFrame, y:pd.Series) -> tuple:
+@_fh.add_split_function
+def best_split_numerical(X:pd.DataFrame, y:pd.Series) -> tuple:
     """
     Find the best split for a group of numerical columns. Returning
     the feature to split on along with the threshold to take
