@@ -47,6 +47,9 @@ class DecisionTreeModel:
         assert split_function in function_dict["split_functions"].keys(), \
             "Split function not yet implemented"
         assert cost_function in function_dict["cost_functions"].keys()
+        # Initialise verified functions within arguments
+        self.split_function = function_dict["split_functions"][split_function]
+        self.cost_function = function_dict["cost_functions"][cost_function]
 
         # Set stopping conditions and initialise tree
         self.min_samples = 5
@@ -78,14 +81,16 @@ class DecisionTreeModel:
                 return(None)
 
         # Get split under current parameters
-        top_feature, thresh = function_dict["split_functions"]["best_split_numerical"](X,y)
+        top_feature, thresh = self.split_function(
+            X,y,self.cost_function
+        )
 
         # Set masks
-        new_left_mask = X[:, top_feature] <= thresh
+        new_left_mask = X.loc[:, top_feature] <= thresh
         new_right_mask = ~new_left_mask
         # Filter x and y
-        new_left_x, new_left_y = X[new_left_mask], y[new_left_mask]
-        new_right_x, new_right_y = X[new_right_mask], y[new_right_mask]
+        new_left_x, new_left_y = X.loc[new_left_mask], y[new_left_mask]
+        new_right_x, new_right_y = X.loc[new_right_mask], y[new_right_mask]
 
         return({
             "feature": top_feature,
@@ -116,7 +121,7 @@ class DecisionTreeModel:
             node_thresh = self.tree["threshold"]
             
             # Select the value from the features based on the current node
-            node_feature_val = X[:,node_feature]
+            node_feature_val = X.loc[:,node_feature]
             if node_feature_val <= node_thresh:
                 current_node = current_node["left"]
             else:
