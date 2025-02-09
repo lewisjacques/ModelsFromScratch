@@ -5,11 +5,7 @@
 ## General Model Backlog
 - Build in preprocessing functionality
     - One-Hot Encoding
-- Build in postprocessing functionality
-    - accuracy_score
-    - precision_score
-    - recall_score
-    - f1_score
+    - Implement logging
 
 ## Decision Tree Backlog
 - Plotting

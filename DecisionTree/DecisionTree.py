@@ -35,7 +35,8 @@ class DecisionTreeModel:
         if model_type == "classifier":
             assert threshold is not None, \
                 "If model-type is classification, threshold for a true assignment must be provided"
-            self.threshold = threshold
+            self.threshold = float(threshold)
+
         assert split_function in function_dict["split_functions"].keys(), \
             "Split function not yet implemented"
         assert cost_function in function_dict["cost_functions"].keys()

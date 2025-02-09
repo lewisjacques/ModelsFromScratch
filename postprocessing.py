@@ -11,15 +11,16 @@ class PostProcess:
             predicted (np.array): list of boolean predicted values
         """
 
-        assert(all(isinstance(t,bool) for t in target)), \
-            "Target values must be boolean"
-        assert(all(isinstance(p,bool) for p in predicted)), \
-            "Predicted values must be boolean"
+        assert(all(isinstance(t,bool) or isinstance(t,np.bool) for t in target)), \
+            f"Target values must be boolean. Given:\n\t{target}"
+        assert(all(isinstance(p,bool) or isinstance(p,np.bool) for p in predicted)), \
+            f"Predicted values must be boolean. Given:\n\t{type(predicted[0])}"
         
         # Calculate the confusion matrix that the metric-functions can query
         self.confusion_matrix = self._get_confusion_matrix(target, predicted)
 
-    def _get_confusion_matrix(self, target:np.array, predicted:np.array) -> np.array:
+    @staticmethod
+    def _get_confusion_matrix(target:np.array, predicted:np.array) -> np.array:
         """
         Build the confusion matrix based on the predicted and target variables
         provided
@@ -39,15 +40,15 @@ class PostProcess:
         correct_preds = target==predicted
         incorrect_preds = target!=predicted
 
-        confusion_matrix = np.zeros((2,2))
-        # True positive
-        confusion_matrix[0][0] = sum(correct_preds[np.where(predicted)])
-        # False positive
-        confusion_matrix[1][0] = sum(incorrect_preds[np.where(predicted)])
-        # False negative
-        confusion_matrix[0][1] = sum(incorrect_preds[np.where(~predicted)])
-        # True negative
-        confusion_matrix[1][1] = sum(correct_preds[np.where(~predicted)])
+        tp = sum(correct_preds[np.where(predicted)[0]])
+        fp = sum(incorrect_preds[np.where(predicted)[0]])
+        fn = sum(incorrect_preds[np.where(~predicted)[0]])
+        tn = sum(correct_preds[np.where(~predicted)[0]])
+
+        confusion_matrix = np.array([
+            [tp,fn],
+            [fp,tn]
+        ])
         return(confusion_matrix)
 
     @property
@@ -77,3 +78,17 @@ class PostProcess:
         Balances both precision and recall"""
         p, r = self.precision, self.recall
         return 2 * (p * r) / (p + r) if (p + r) > 0 else 0.0
+    
+    def model_review(self, ret=False) -> str|None:
+        rev = f"""Confusion Matrix:\n{self.confusion_matrix}
+
+        Accuracy: {self.accuracy:.2%}
+        Precision: {self.precision:.2%}
+        Recall: {self.recall:.2%}
+        F1 Score: {self.f1_score:.2%}
+        """
+
+        if ret:
+            return(rev)
+        else: 
+            print(rev)

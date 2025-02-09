@@ -1,6 +1,8 @@
 from DecisionTree.DecisionTree import DecisionTreeModel
+from postprocessing import PostProcess
 from preprocessing import convert_bool, one_hot_encode, split_test_train
 import numpy as np
+
 import pandas as pd
 
 # Import amphibian data
@@ -23,11 +25,15 @@ y = amphibian_df.loc[:,"Common toad"]
 X_train, X_test, y_train, y_test = split_test_train(X,y,seed=1)
 
 # Initialise the decision tree based on the training data
-dt = DecisionTreeModel()
+dt = DecisionTreeModel(
+    model_type="classifier",
+    threshold=0.8
+)
 dt.build_tree(X_train,y_train)
 
 # Predict the values in the test data
 y_pred = dt.predict(X_test)
-print(y_pred)
 
 # Initialise PostProcessing to determine the success of the model
+pp = PostProcess(y_test.to_numpy(), y_pred)
+pp.model_review()
