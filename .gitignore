@@ -1,4 +1,4 @@
 .models_venv/
 .vscode/
 DataSources/
-*/__pycache__/
+**/__pycache__/
