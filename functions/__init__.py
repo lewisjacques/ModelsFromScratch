@@ -22,5 +22,3 @@ function_dict = {
         import_module(f"functions.{file_name}")._fh.get_functions() \
         for file_name in function_files
 }
-
-print(function_dict)

@@ -3,14 +3,6 @@ import pandas as pd
 import numpy as np
 
 class DecisionTreeModel:
-    IMPORT_TYPES = ("cost", "split")
-
-
-
-    #! Wrap the split and cost functions in decorators to improve
-    SPLIT_FUNCTIONS = ("best_split_numerical",)
-    COST_FUNCTIONS = ("mse")
-
     def __init__(
         self,
         split_function:str="best_split_numerical",
@@ -54,10 +46,10 @@ class DecisionTreeModel:
         # Set stopping conditions and initialise tree
         self.min_samples = 5
         self.max_depth = 10
-        self.tree = None
         self.model_type = model_type
+        self.tree = None
 
-    def build_tree(self, X:pd.DataFrame, y:pd.Series, depth=1) -> dict:
+    def build_tree(self, X:pd.DataFrame, y:pd.Series, depth=0) -> dict:
         """
         Build the decision tree based on class parameters
 
@@ -92,20 +84,26 @@ class DecisionTreeModel:
         new_left_x, new_left_y = X.loc[new_left_mask], y[new_left_mask]
         new_right_x, new_right_y = X.loc[new_right_mask], y[new_right_mask]
 
-        return({
+        node = {
             "feature": top_feature,
             "threshold": thresh,
             "left": self.build_tree(new_left_x, new_left_y, depth+1),
             "right": self.build_tree(new_right_x, new_right_y, depth+1)
-        })
+        }
+
+        # If this is the first call (root node), store it in self.tree
+        if depth == 0:
+            self.tree = node
+        # Return the node for recursive calls
+        return node  
     
-    def predict_one(self, X:pd.DataFrame) -> float:
+    def predict_one(self, X:tuple) -> float:
         """
         Navigate the class tree to return a single prediction
         based on the features provided
 
         Args:
-            X (pd.DataFrame): All features for a single row
+            X (tuple): Named tuple for features of a single row
 
         Returns:
             float: Target variable, y
@@ -121,7 +119,8 @@ class DecisionTreeModel:
             node_thresh = self.tree["threshold"]
             
             # Select the value from the features based on the current node
-            node_feature_val = X.loc[:,node_feature]
+            # Named tuple should be accessed with X._col_ but use getattr for dynamism
+            node_feature_val = getattr(X, node_feature)
             if node_feature_val <= node_thresh:
                 current_node = current_node["left"]
             else:
@@ -141,4 +140,4 @@ class DecisionTreeModel:
             np.array: Array of y, target variables
         """
         
-        return np.array([self.predict_one(x, self.tree) for x in X])
+        return np.array([self.predict_one(x) for x in X.itertuples(index=False)])
