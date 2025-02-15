@@ -32,54 +32,6 @@ class FunctionHelper:
         
         return(raw_function_name)
     
-### --- Class For Decision Tree Splitting Functions --- ###
-
-class SplitFunctionHelper(FunctionHelper):
-    def __init__(self):
-        self.all_split_functions = dict()
-
-    def get_functions(self):
-        return(self.all_split_functions)
-
-    @staticmethod
-    def name_formatter(new_split_function:Callable) -> str:
-        """
-        Overwrite naming convention for split functions
-
-        Args:
-            new_split_function (Callable): as named
-
-        Returns:
-            str: checked and formatted name
-        """
-
-        raw_function_name = new_split_function.__name__
-        assert re.match(r"best_split_[a-z0-9_]+", raw_function_name), \
-            "Naming convention of split functions must be best_split_xxx"
-    
-        return(raw_function_name)
-
-    def add_split_function(
-        self, 
-        split_function:Callable
-    ) -> Callable:
-        """
-        Wrapper for split_functions so we can dynamically import split
-        functions
-
-        Args:
-            split_function (Callable): As named
-
-        Returns:
-            function: split_function once we've appended it's name to our tuple
-        """
-
-        # Extract the name and make sure naming conventions are consistent
-        function_name = self.name_formatter(split_function)
-        # Add function to the class dictionary
-        self.all_split_functions[function_name] = split_function
-        return
-    
 class CostFunctionHelper(FunctionHelper):
     def __init__(self):
         self.all_cost_functions = dict()

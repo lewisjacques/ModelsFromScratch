@@ -1,6 +1,6 @@
 # Models From Scratch
 
-    Repository to program different Machine Learning models from scratch to gain a deeper undertsanding of their implementation
+Repository to program different Machine Learning models from scratch to gain a deeper undertsanding of their implementation
 
 ## General Model Backlog
 
@@ -25,4 +25,7 @@ Plotting functionality handled similar to the .functions/ package
 - Implementation using DecisionTreeModel variations
 
 ## Decision Tree Backlog
+- Best split categorical
+- Combine numerical and categorical splits
+- Testing with different cost functions
 - Plotting

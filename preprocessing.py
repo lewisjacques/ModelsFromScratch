@@ -1,6 +1,9 @@
 import pandas as pd
 import numpy as np
 
+# Don't handle preprocessing as a class as different functions are
+# going to be used in different scenarios
+
 def convert_bool(s:pd.Series, true_flag=1) -> pd.Series:
     """
     Convert series flags to boolean

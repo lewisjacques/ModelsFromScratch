@@ -4,7 +4,9 @@ import numpy as np
 class PostProcess:
     def __init__(self, target:np.array, predicted:np.array):
         """
-        Handle building up all performance metrics into one class
+        Handle building up all performance metrics into one class.
+        Postprocessing is always going to be handled and used in the same
+        way so handle as a class
 
         Args:
             target (np.array): list of boolean actual values

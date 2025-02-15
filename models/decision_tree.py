@@ -6,7 +6,7 @@ class DecisionTreeModel:
     def __init__(
         self,
         split_function:str="best_split_numerical",
-        cost_function:str="mean_squared_error",
+        cost_function:str="mean_squared_error_variance",
         model_type:str="regression",
         threshold:str|None=None
     ):
@@ -36,12 +36,12 @@ class DecisionTreeModel:
             assert threshold is not None, \
                 "If model-type is classification, threshold for a true assignment must be provided"
             self.threshold = float(threshold)
-
         assert split_function in function_dict["split_functions"].keys(), \
             "Split function not yet implemented"
+        
         assert cost_function in function_dict["cost_functions"].keys()
         # Initialise verified functions within arguments
-        self.split_function = function_dict["split_functions"][split_function]
+        self.split_function = self.best_split_numerical
         self.cost_function = function_dict["cost_functions"][cost_function]
 
         # Set stopping conditions and initialise tree
@@ -49,6 +49,58 @@ class DecisionTreeModel:
         self.max_depth = 10
         self.model_type = model_type
         self.tree = None
+
+    def best_split_numerical(
+        self,
+        X:pd.DataFrame, 
+        y:pd.Series
+    ) -> tuple:
+        """
+        Find the best split for a group of numerical columns. Returning
+        the feature to split on along with the threshold to take
+
+        Args:
+        X (pd.DataFrame): Data frame of features and their values
+        y (pd.Series): Target variable for the same dataset
+
+        Returns:
+            tuple: (feature, threshold)
+        """
+
+        # All features
+        features = X.columns
+        n_samples = X.shape[0]
+
+        # Current best splits and thresholds
+        best_feature, best_threshold, best_mse = None, None, float("inf")
+
+        # Iterate through each feature and potential threshold
+        for f in features:
+            unique_f_values = X.loc[:,f].unique()
+            # Take all potential values as thresholds for now
+            for threshold in unique_f_values:
+                # Find the values either side of the split
+                left_mask = X.loc[:,f] <= threshold
+                right_mask = ~left_mask
+
+                # Avoid empty splits on either side by checking true counts
+                if sum(left_mask) == 0 or sum(right_mask) == 0:
+                    continue
+
+                # Calculate the sum of the loss on either side of the split
+                # The lower the loss the higher the homogeneity 
+                left_cost = self.cost_function(y[left_mask])
+                right_cost = self.cost_function(y[right_mask])
+                # Weighted mse dependent on split sizes
+                total_cost = (
+                    (sum(left_mask)*left_cost) + (sum(right_mask)*right_cost)
+                ) / n_samples
+
+                # Check if this cost outperforms current cost
+                if total_cost < best_mse:
+                    best_feature, best_threshold, best_mse = f, threshold, total_cost
+        
+        return best_feature, best_threshold
 
     def build_tree(self, X:pd.DataFrame, y:pd.Series, depth=0) -> dict:
         """
